@@ -1,0 +1,126 @@
+## title {.tabset .tabset-fade}
+content above tabbed region.
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, echo=FALSE, fig.height=7, fig.width=7)
+library(ggplot2)
+library(reshape2)
+library(irene)
+library(DT)
+Sys.setlocale("LC_NUMERIC","C")
+options(stringsAsFactors=FALSE)
+load('res/res.rda')
+mk=c("H3K27ac","H3K27me3","H3K36me3","H3K4me1","H3K4me3","H3K9me3")
+i=1
+conf=read.table('res/ChIPdesign.txt',sep='\t',stringsAsFactors=FALSE,col.names=c('experiment','factor','condition','ipReads','ctReads','peaks'))
+conf=conf[conf$experiment==i & conf$factor!="H3K9ac",]
+dat=res[[i]]
+data(markers)
+opt=list(pageLength=5,scrollX=TRUE,autoWidth=TRUE)
+newopt <- function(d,...) {d$dd=1;d}
+read.txt <- function(f){
+    txt=strsplit(readLines(f),"\t")
+    v=lapply(txt,function(d) d[3:length(d)])
+    names(v)=lapply(txt,function(d) d[1])
+    v
+}
+getAUC <- function(f) 
+datatable(data.frame(AUC=unlist(lapply(read.txt(f),function(a) sprintf('%.3f', get.auc(get.rank(a, enh[[i]])))))),rownames=TRUE,filter="top",options=opt)
+
+```
+
+### PC
+__PC composition__
+```{r}
+df=data.frame(melt(prcomp(dat$Dobs)$rotation),rep(levels(as.factor(conf$factor)),ncol(dat$Dobs)))
+colnames(df)=c("id","PC","Loadings","Mark")
+ggplot(df,aes(x=Mark,y=Loadings,fill=Mark))+geom_bar(stat='identity')+facet_grid(PC~.)+coord_flip()+theme(legend.position="none",axis.text.x=element_text(angle=90,vjust=0.5))
+```
+
+__PC variance__
+```{r}
+df=melt(dat$proj)
+df=df[!is.na(df[,3]),]
+df=df[df[,1]=="percent_var",2:3]
+colnames(df)=c("PC","var")
+df$PC=as.character(df$PC)
+ggplot(df,aes(x=PC,y=var,fill=PC))+geom_bar(stat='identity')+labs(x="PC",y="Variance")+scale_y_continuous(labels=scales::percent)+theme(legend.position="none")
+```
+
+### Rank
+```{r}
+datatable(data.frame(Rank=rank[[i]]),rownames=TRUE,filter="top",options=opt)
+```
+
+### ECDF
+```{r}
+df=rbind(data.frame(get.rankid(markers[[i]], enh[[i]]),list='Irene'), data.frame(get.rankid(markers[[i]], prom[[i]]),list='Promoter'))
+ggplot(df,aes(rank,colour=list))+stat_ecdf(pad=TRUE)+labs(x="Rank",y="ECDF")
+datatable(df,rownames=FALSE,filter="top",options=list(pageLength=5,scrollX=TRUE,autoWidth=TRUE))
+```
+
+### Enrichment
+__Tissue specificity__
+```{r}
+getAUC('res/ARCHS4_Tissues.txt')
+```
+
+__KEGG__
+```{r}
+getAUC('res/KEGG_2016.txt')
+```
+
+__WikiPathways__
+```{r}
+getAUC('res/WikiPathways_2016.txt')
+```
+
+### Rewiring
+```{r, eval=FALSE}
+k=c(3,4,5,7,10,11,12,13)
+df=do.call("rbind",lapply(k,function(i){
+data.frame(auc=unlist(lapply(1:100,function(d) getAUC(pageRank(d$gr[,c("id","PC1")],H1,rewire=TRUE)$PC1,markers[[nm[i]]]))),type=nm[i])
+}))
+df1=data.frame(auc=unlist(lapply(k,function(i){getAUC(d$pg$PC1,markers[[nm[i]]])})),type=nm[k])
+df2=data.frame(auc=unlist(lapply(k,function(i){getAUC(d$pg$prom,markers[[nm[i]]])})),type=nm[k])
+ggplot()+geom_boxplot(data=df,aes(type,auc),outlier.size=NA)+geom_point(data=df1,aes(type,auc),size=4,shape=19,col="red")+geom_point(data=df2,aes(type,auc),size=4,shape=18,col="red")+labs(x="Test cases",y="AUC")+theme(axis.text.x=element_text(angle=30,hjust=1))
+write.table(df,file="irene-supp/AUC/rnd.txt",sep="\t",quote=F)
+```
+
+### Data validity
+
+__Distribution densities__
+
+```{r, eval=FALSE}
+library(quantro)
+load(paste0(s,'.hg19.rda'))
+data=data*1000/abs(bed[,3]-bed[,2])
+data=log(data+1)
+mark=str_extract(meta$file,"H3K\\w+|WGB|frac|Input")
+mark[mark=='WGB' | mark=='frac']='WGBS'
+mark=as.factor(mark)
+svglite(paste0(s,'.svg'),5,5)
+matdensity(data,mark,main=s,xlab="",ylab="")
+legend('topright',levels(mark),col=RColorBrewer::brewer.pal(8,"Dark2"),lty=1,lwd=3)
+```
+
+__Correlations between epigenetic marks__
+
+Correlations between epigenetic marks in each group
+
+```{r, eval=FALSE}
+ggplot(m,aes(cell,Var1,fill=value))+geom_tile(colour="white")+
+  facet_grid(.~Var2)+scale_fill_gradient2(low="blue",high="red") +
+  theme(axis.text.x=element_text(angle=90,size=7,vjust=0.5))+labs(x="",y="")
+```
+
+AUCs of randomized promoter-enhancer interaction network using PC1
+
+```{r, eval=FALSE}
+dname=function(i) nm[i]
+ggplot(df,aes(type))+geom_ribbon(aes(ymin=q1,ymax=q3),fill="grey70")+geom_line(aes(y=enh),color="red")+ geom_line(aes(y=prom),color="red",linetype="dashed")+ scale_x_continuous(breaks=1:7,label=dname)+labs(x="",y="AUC")
+```
+
+
+##
+content below tabbed region

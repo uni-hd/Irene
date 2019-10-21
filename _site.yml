@@ -1,0 +1,16 @@
+name: "irene"
+output_dir: docs
+exclude: ["docs","inst","res","src","man","R","NAMESPACE","DESCRIPTION","README.md"]
+navbar:
+  title: "Irene results"
+  type: inverse
+  left:
+    - text: "Overview"
+      href: index.html
+    - text: "Report"
+      href: report.html
+output:
+  html_document:
+    code_folding: "hide"
+    theme: cosmo
+    highlight: textmate

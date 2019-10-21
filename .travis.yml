@@ -1,0 +1,25 @@
+language: r
+cache: packages
+r: oldrel
+
+#sudo: required
+
+warnings_are_errors: false
+
+r-packages:
+- igraph
+- Rcpp
+
+bioc_packages:
+- GenomicRanges
+- preprocessCore
+
+#r_github_packages:
+
+bioc_required: true
+
+r_check_args: --no-build-vignettes --no-vignettes
+
+after_success:
+  - Rscript -e 'library(irene)'
+  

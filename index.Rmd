@@ -1,0 +1,28 @@
+## Overview {.tabset .tabset-fade}
+
+Experiment summary
+
+```{r global_options, include=FALSE}
+
+Sys.setlocale("LC_NUMERIC","C")
+options(stringsAsFactors=FALSE)
+```
+
+### Data
+Data sources
+
+```{r message=FALSE}
+confs=lapply(1:9,function(i){
+conf=read.table('res/ChIPdesign.txt',sep='\t',stringsAsFactors=FALSE,col.names=c('experiment','factor','condition','ipReads','ctReads','peaks'))
+conf=conf[conf$experiment==i,]
+conf[conf$factor!="H3K9ac",]
+})
+
+```
+
+### Benchmark
+__AUC__
+
+```{r message=FALSE}
+
+```
