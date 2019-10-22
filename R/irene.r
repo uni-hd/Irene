@@ -117,6 +117,12 @@ make.graph <- function(hic, gene, score, weight=1e-20) {
     list(g=g,v=s)
 }
 
+get.subgraph <- function(g, gene, uns='_'){
+    m=get.edgelist(g)
+    induced.subgraph(g,unique(as.character(m[unlist(lapply(paste0(gene,uns), function(d) grep(d,m[,2]))),])))
+}
+
+# ported from sSeq
 get.auc <- function(yy){
     yy = yy[order(yy)]
     p1 = ecdf(yy)
@@ -124,6 +130,7 @@ get.auc <- function(yy){
 
 }
 
+# ported from caTools
 trapz <- function (x, y) {
     idx = 2:length(x)
     as.double((x[idx] - x[idx - 1]) %*% (y[idx] + y[idx - 1]))/2

@@ -3,7 +3,11 @@
 Experiment summary
 
 ```{r global_options, include=FALSE}
-
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, fig.height=7, fig.width=7)
+library(ggplot2)
+library(reshape2)
+library(irene)
+library(DT)
 Sys.setlocale("LC_NUMERIC","C")
 options(stringsAsFactors=FALSE)
 ```
@@ -11,18 +15,29 @@ options(stringsAsFactors=FALSE)
 ### Data
 Data sources
 
-```{r message=FALSE}
-confs=lapply(1:9,function(i){
+```{r}
 conf=read.table('res/ChIPdesign.txt',sep='\t',stringsAsFactors=FALSE,col.names=c('experiment','factor','condition','ipReads','ctReads','peaks'))
-conf=conf[conf$experiment==i,]
-conf[conf$factor!="H3K9ac",]
-})
-
+datatable(conf,rownames=FALSE,filter="top",options=list(pageLength=20,scrollX=TRUE,autoWidth=TRUE))
 ```
 
 ### Benchmark
-__AUC__
+__AUCs of different histone markrs__
 
-```{r message=FALSE}
+```{r}
 
 ```
+
+__AUCs of randomized promoter-enhancer interaction network using PC1__
+
+```{r}
+df=do.call(rbind, lapply(1:9,function(i){
+quantile(unlist(lapply(rewired[[i]],function(d){
+get.auc(get.rank(markers[[i]], d))
+})))
+}))
+df=data.frame(df[,c(2,4)], type=1:9, prom=getAUCs(prom), enh=getAUCs(enh))
+names(df)[1:2]=c('q1','q3')
+dname=function(i) nm[i]
+ggplot(df,aes(type))+geom_ribbon(aes(ymin=q1,ymax=q3),fill="grey70")+geom_line(aes(y=enh),color="red")+geom_line(aes(y=prom),color="red",linetype="dashed")+ scale_x_continuous(breaks=1:9,label=dname)+labs(x="",y="AUC")
+```
+

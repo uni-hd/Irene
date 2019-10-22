@@ -20,6 +20,9 @@ With the help of *Irene*, user not only discover the genes which show significan
 The whole idea has been demonstrated in the Chapter III of Qi Wang's [dissertation](https://github.com/hdsu-bioquant/irene-web/blob/master/docs/chapter3.pdf). For the above purposes, we employed singular value decomposition [dPCA](http://www.biostat.jhsph.edu/~hji/dpca/) and random walk ranking [PageRank](http://igraph.org/r/doc/page_rank.html). The epigenetic alterations over genomic regulatory elements between two groups are presented as dPC scores and further to PageRank scores during solving the enhancer-promoter relationships. 
 
 # Installation
+```sh
+tar --exclude='irene/.git' --exclude='irene/res' --exclude='irene/docs' -zcvf irene.tar.gz irene
+```
 *Irene* can be installed directly from GitHub with the help of *devtools* package:
 ```r
 library(devtools)
