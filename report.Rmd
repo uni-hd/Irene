@@ -11,14 +11,14 @@ Sys.setlocale("LC_NUMERIC","C")
 options(stringsAsFactors=FALSE)
 load('res/res.rda')
 mk=c("H3K27ac","H3K27me3","H3K36me3","H3K4me1","H3K4me3","H3K9me3")
-nm=c("CLL","Glioma","CRC","B-ALL","AML","CLL","MCL","MM","PTC")
+nm=c("CLL","Glioma","CRC","B-ALL","AML","CLL-2","MCL","MM","PTC")
 goi=list(c('PAX5'))
 i=1
 conf=read.table('res/ChIPdesign.txt',sep='\t',stringsAsFactors=FALSE,col.names=c('experiment','factor','condition','ipReads','ctReads','peaks'))
 conf=conf[conf$experiment==i & conf$factor!="H3K9ac",]
 dat=res[[i]]
 data(markers)
-opt=list(pageLength=5,scrollX=TRUE,autoWidth=TRUE)
+opt=list(pageLength=5,scrollX=TRUE,order=list(list(1,'desc')),autoWidth=TRUE)
 newopt <- function(d,...) {d$dd=1;d}
 read.txt <- function(f){
     txt=strsplit(readLines(f),"\t")
@@ -60,6 +60,17 @@ datatable(data.frame(Rank=rank[[i]]),rownames=TRUE,filter="top",options=opt)
 df=rbind(data.frame(get.rankid(markers[[i]], enh[[i]]),list='Irene'), data.frame(get.rankid(markers[[i]], prom[[i]]),list='Promoter'))
 ggplot(df,aes(rank,colour=list))+stat_ecdf(pad=TRUE)+labs(x="Rank",y="ECDF")
 datatable(df,rownames=FALSE,filter="top",options=list(pageLength=5,scrollX=TRUE,autoWidth=TRUE))
+```
+
+### AUC
+enh to prom
+```{r}
+prom_auc=do.call(cbind,lapply(1:6,function(k){
+getAUCs(lapply(1:9,function(i){
+j=get.geneid(res[[i]]$bed[,4])
+gsub("_\\d+", "", res[[i]]$bed[j,4][order(abs(res[[i]]$Dobs[j,k]),decreasing=TRUE)])
+}))
+}))
 ```
 
 ### Enrichment

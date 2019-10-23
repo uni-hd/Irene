@@ -10,6 +10,8 @@ library(irene)
 library(DT)
 Sys.setlocale("LC_NUMERIC","C")
 options(stringsAsFactors=FALSE)
+mk=c("H3K27ac","H3K27me3","H3K36me3","H3K4me1","H3K4me3","H3K9me3")
+nm=c("CLL","Glioma","CRC","B-ALL","AML","CLL-2","MCL","MM","PTC")
 ```
 
 ### Data
@@ -24,7 +26,14 @@ datatable(conf,rownames=FALSE,filter="top",options=list(pageLength=20,scrollX=TR
 __AUCs of different histone markrs__
 
 ```{r}
-
+auc_marks=data.frame(lapply(1:9,function(i){
+unlist(lapply(1:6,function(j){
+get.auc(get.rank(markers[[i]],get.generank(marks[[i]][[j]])))
+}))
+}),row.names=mk)
+colnames(auc_marks)=nm
+#auc_marks=rbind(auc_marks, dPC1=getAUCs(enh))
+ggplot(melt(as.matrix(auc_marks)), aes(x=Var2, y=value, colour=Var1, shape=Var1))+geom_point(size=4)+labs(x="Test cases",y="AUCs")
 ```
 
 __AUCs of randomized promoter-enhancer interaction network using PC1__

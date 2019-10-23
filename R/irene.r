@@ -1,4 +1,4 @@
-dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.25, verbose = TRUE, 
+dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.25, verbose = TRUE, notrun = FALSE, 
     nPaired = 0, nTransform = 0, nColMeanCent = 0, nColStand = 0, nMColMeanCent = 1, 
     nMColStand = 0, dSNRCut = 5, nUsedPCAZ = 0, nUseRB = 0, dPeakFDRCut = 0.5) 
 {
@@ -18,12 +18,14 @@ dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.25, ver
     })), nrow = nGroupNum, byrow = TRUE)
     ix <- len>minlen & len<maxlen
     bed <- bed[ix, ]
-    data <- data[ix, ] * 1e3/len
+    data <- data[ix, ] * 1e3/len[ix]
     if (min(data) <= 0) 
         data <- data - min(data) + 1e-5
     data <- normalize.quantiles(boxcox(data, lambda))
     if (verbose) 
         boxplot(data, xlab="datasets", ylab="boxcox(IP)",main="Normalized data")
+    if (notrun)
+        return(list(bed=bed, data=data))
     nLociNum <- nrow(bed)
     d <- dPCA_main_impl(nGroupNum, nDatasetNum, nSampleNum, 
             nPaired, nLociNum, groupId, datasetId, 
@@ -79,7 +81,7 @@ get.rank <- function(k, r){
 }
 
 get.generank <- function(r){
-    pr=names(sort(r$vector,decreasing=TRUE))
+    pr=names(sort(r,decreasing=TRUE))
     pr=pr[grepl('_',pr)]
     gsub("_\\d+", "", pr)
 }
