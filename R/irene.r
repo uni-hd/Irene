@@ -1,8 +1,10 @@
-dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.25, verbose = TRUE, notrun = FALSE, 
+dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.25, verbose = TRUE, 
     nPaired = 0, nTransform = 0, nColMeanCent = 0, nColStand = 0, nMColMeanCent = 1, 
     nMColStand = 0, dSNRCut = 5, nUsedPCAZ = 0, nUseRB = 0, dPeakFDRCut = 0.5) 
 {
-    len <- abs(bed[, 3] - bed[, 2]) + 1
+    x <- get.norm.data(meta, bed, data, normalize=TRUE)
+    bed <- x$bed
+    data <- x$data
     groupId <- as.numeric(as.factor(meta$condition))
     datasetId <- as.numeric(as.factor(meta$factor))
     condId <- unique(groupId)
@@ -16,16 +18,6 @@ dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.25, ver
             length(which((x == j)))
         }))
     })), nrow = nGroupNum, byrow = TRUE)
-    ix <- len>minlen & len<maxlen
-    bed <- bed[ix, ]
-    data <- data[ix, ] * 1e3/len[ix]
-    if (min(data) <= 0) 
-        data <- data - min(data) + 1e-5
-    data <- normalize.quantiles(boxcox(data, lambda))
-    if (verbose) 
-        boxplot(data, xlab="datasets", ylab="boxcox(IP)",main="Normalized data")
-    if (notrun)
-        return(list(bed=bed, data=data))
     nLociNum <- nrow(bed)
     d <- dPCA_main_impl(nGroupNum, nDatasetNum, nSampleNum, 
             nPaired, nLociNum, groupId, datasetId, 
@@ -39,6 +31,19 @@ dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.25, ver
     d$bed <- bed
     d$data <- data
     d
+}
+
+get.norm.data <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.25, normalize = FALSE) {
+    len <- abs(bed[, 3] - bed[, 2]) + 1
+    ix <- len>minlen & len<maxlen
+    bed <- bed[ix, ]
+    data <- data[ix, ] * 1e3/len[ix]
+    if (min(data) <= 0) 
+        data <- data - min(data) + 1e-5
+    if (normalize)
+        data <- normalize.quantiles(boxcox(data, lambda))
+    list(bed=bed, data=data, Dobs=do.call(cbind,lapply(mk, function(i) 
+        rowMeans(data[,meta$condition!="Healthy" & meta$factor==i]) - rowMeans(data[,meta$condition=="Healthy" & meta$factor==i]))))
 }
 
 boxcox <- function(x,lambda=0.15) {
