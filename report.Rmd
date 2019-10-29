@@ -29,7 +29,9 @@ read.txt <- function(f){
 getAUC <- function(f,d) 
 datatable(data.frame(AUC=unlist(lapply(read.txt(f),function(a) sprintf('%.3f', get.auc(get.rank(a, d[[i]])))))),rownames=TRUE,filter="top",options=opt)
 getAUCs <- function(d) 
-unlist(lapply(1:9,function(i) get.auc(get.rank(markers[[i]], d[[i]]))))
+unlist(lapply(1:9,function(i) get.auc(get.rank(markers[[i]], get.generank(d[[i]])))))
+getAUCmat <- function(d) 
+lapply(1:9,function(i){unlist(lapply(1:6,function(j) get.auc(get.rank(markers[[i]], get.generank(d[[i]][[j]])))))})
 ```
 
 ### PC
@@ -104,6 +106,8 @@ __Correlations between epigenetic marks__
 Correlations between epigenetic marks in each group
 
 ```{r, eval=FALSE}
+m=matrix(NA,6,6)
+for(i in 1:6){for(j in 1:6){m[i,j]=cor(res[[1]]$Dobs[,i],res[[1]]$Dobs[,j])}}
 ggplot(m,aes(cell,Var1,fill=value))+geom_tile(colour="white")+
   facet_grid(.~Var2)+scale_fill_gradient2(low="blue",high="red") +
   theme(axis.text.x=element_text(angle=90,size=7,vjust=0.5))+labs(x="",y="")

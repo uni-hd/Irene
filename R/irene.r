@@ -2,7 +2,7 @@ dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.25, ver
     nPaired = 0, nTransform = 0, nColMeanCent = 0, nColStand = 0, nMColMeanCent = 1, 
     nMColStand = 0, dSNRCut = 5, nUsedPCAZ = 0, nUseRB = 0, dPeakFDRCut = 0.5) 
 {
-    x <- get.norm.data(meta, bed, data, normalize=TRUE)
+    x <- get.norm.data(meta, bed, data, transform=TRUE)
     bed <- x$bed
     data <- x$data
     groupId <- as.numeric(as.factor(meta$condition))
@@ -33,15 +33,16 @@ dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.25, ver
     d
 }
 
-get.norm.data <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.25, normalize = FALSE) {
+get.norm.data <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.25, transform = FALSE) {
     len <- abs(bed[, 3] - bed[, 2]) + 1
     ix <- len>minlen & len<maxlen
     bed <- bed[ix, ]
     data <- data[ix, ] * 1e3/len[ix]
     if (min(data) <= 0) 
         data <- data - min(data) + 1e-5
-    if (normalize)
-        data <- normalize.quantiles(boxcox(data, lambda))
+    if (transform)
+        data <- boxcox(data, lambda)
+    data <- normalize.quantiles(data)
     list(bed=bed, data=data, Dobs=do.call(cbind,lapply(mk, function(i) 
         rowMeans(data[,meta$condition!="Healthy" & meta$factor==i]) - rowMeans(data[,meta$condition=="Healthy" & meta$factor==i]))))
 }

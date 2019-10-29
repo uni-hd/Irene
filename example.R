@@ -12,7 +12,7 @@ conf[conf$factor!="H3K9ac",]
 #dPCA
 res=lapply(1:9,function(i){
 data=read.alldata(confs[[i]])
-dPCA(confs[[i]],data$bed,data$data,verbose=FALSE)
+get.norm.data(confs[[i]],data$bed,data$data)
 })
 #histone marks
 marks=lapply(1:9,function(i){
