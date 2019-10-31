@@ -9,10 +9,15 @@ conf=read.table('ChIPdesign.txt',sep='\t',stringsAsFactors=FALSE,col.names=c('ex
 conf=conf[conf$experiment==i,]
 conf[conf$factor!="H3K9ac",]
 })
-#dPCA
+#normalization
 res=lapply(1:9,function(i){
 data=read.alldata(confs[[i]])
 get.norm.data(confs[[i]],data$bed,data$data)
+})
+#dPCA
+dres=lapply(1:9,function(i){
+data=read.alldata(confs[[i]])
+dPCA(confs[[i]],data$bed,data$data)
 })
 #histone marks
 marks=lapply(1:9,function(i){

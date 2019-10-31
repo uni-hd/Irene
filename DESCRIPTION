@@ -10,5 +10,5 @@ URL: https://github.com/uni-hd/irene
 License: MIT
 LazyData: TRUE
 LinkingTo: Rcpp
-Depends: R (>= 3.1.0), igraph, preprocessCore
-Imports: Rcpp, stats, grDevices, graphics, utils
+Depends: R (>= 3.1.0), igraph
+Imports: Rcpp, stats, grDevices, graphics, utils, limma
