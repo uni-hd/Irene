@@ -1,8 +1,8 @@
-dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, transform = TRUE, verbose = TRUE, 
+dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, transform = TRUE, trunc=FALSE, 
     nPaired = 0, nTransform = 0, nColMeanCent = 0, nColStand = 0, nMColMeanCent = 1, 
     nMColStand = 0, dSNRCut = 5, nUsedPCAZ = 0, nUseRB = 0, dPeakFDRCut = 0.5) 
 {
-    dd <- get.norm.data(meta, bed, data, lambda=lambda, transform=transform)
+    dd <- get.norm.data(meta, bed, data, lambda=lambda, transform=transform, trunc=trunc)
     bed <- dd$bed
     groupId <- as.numeric(as.factor(meta$condition))
     datasetId <- as.numeric(as.factor(meta$factor))
@@ -13,7 +13,7 @@ dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, tran
     sampleName <- rep("", nSampleNum)
     repNum <- matrix(unlist(lapply(condId, function(i) {
         x <- datasetId[groupId == i]
-        unlist(lapply(unique(x), function(j) {
+        unlist(lapply(1:max(datasetId), function(j) {
             length(which((x == j)))
         }))
     })), nrow = nGroupNum, byrow = TRUE)
@@ -27,11 +27,12 @@ dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, tran
             nrow = 4, byrow = TRUE, dimnames = list(names(d)[1:4]))
     d$Dobs <- matrix(d$Dobs, ncol = nDatasetNum, byrow = TRUE)
     d$PC <- matrix(d$PC, ncol = nDatasetNum, byrow = TRUE)
+    d$lambda <- dd$lambda
     d$bed <- bed
     d
 }
 
-get.norm.data <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, transform = FALSE) {
+get.norm.data <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, transform = FALSE, trunc=FALSE) {
     mk <- sort(unique(meta$factor))
     len <- abs(bed[, 3] - bed[, 2]) + 1
     ix <- len>minlen & len<maxlen
@@ -39,17 +40,31 @@ get.norm.data <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 
     data <- data[ix, ] * 1e3/len[ix]
     if (min(data) <= 0) 
         data <- data - min(data) + 1e-5
-    if (transform){
-        data <- boxcox(data, lambda)
+    if (lambda=="auto")
+        lambda = get.lambda(data)
+    if (transform)
+        data <- boxCox(data, lambda)
+    if (trunc)
         data[data<0] = 0
-    }
     data <- normalizeQuantiles(data)
-    list(bed=bed, data=data, Dobs=do.call(cbind,lapply(mk, function(i) 
+    list(bed=bed, data=data, lambda=lambda, Dobs=do.call(cbind,lapply(mk, function(i) 
         rowMeans(data[,meta$condition!="Healthy" & meta$factor==i]) - rowMeans(data[,meta$condition=="Healthy" & meta$factor==i]))))
 }
 
-boxcox <- function(x,lambda=0.2) {
+boxCox <- function(x,lambda=0.2) {
     (x^lambda - 1)/lambda
+}
+
+invboxCox <- function(x,lambda=0.2) {
+    exp(log(abs(1 + lambda*x))/lambda)
+}
+
+get.lambda <- function(d){
+    median(unlist(apply(d,2,function(tmp){
+    bc <- MASS::boxcox(do.call("lm",list(tmp~1)), lambda = seq(.1, .25, .01), plotit = FALSE)
+    lam <- bc$x[which.max(bc$y)]
+    lam
+    })))
 }
 
 read.bed <- function (f){

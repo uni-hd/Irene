@@ -11,4 +11,4 @@ License: MIT
 LazyData: TRUE
 LinkingTo: Rcpp
 Depends: R (>= 3.1.0), igraph
-Imports: Rcpp, stats, grDevices, graphics, utils, limma
+Imports: Rcpp, stats, grDevices, graphics, utils, limma, MASS
