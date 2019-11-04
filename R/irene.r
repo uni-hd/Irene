@@ -1,8 +1,8 @@
-dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, transform = TRUE, trunc=FALSE, 
+dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, control="Healthy", transform = TRUE, trunc=FALSE, 
     nPaired = 0, nTransform = 0, nColMeanCent = 0, nColStand = 0, nMColMeanCent = 1, 
     nMColStand = 0, dSNRCut = 5, nUsedPCAZ = 0, nUseRB = 0, dPeakFDRCut = 0.5) 
 {
-    dd <- get.norm.data(meta, bed, data, lambda=lambda, transform=transform, trunc=trunc)
+    dd <- get.norm.data(meta, bed, data, lambda=lambda, control=control, transform=transform, trunc=trunc)
     bed <- dd$bed
     groupId <- as.numeric(as.factor(meta$condition))
     datasetId <- as.numeric(as.factor(meta$factor))
@@ -32,7 +32,7 @@ dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, tran
     d
 }
 
-get.norm.data <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, transform = FALSE, trunc=FALSE) {
+get.norm.data <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, control="Healthy", transform = FALSE, trunc=FALSE) {
     mk <- sort(unique(meta$factor))
     len <- abs(bed[, 3] - bed[, 2]) + 1
     ix <- len>minlen & len<maxlen
@@ -48,7 +48,7 @@ get.norm.data <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 
         data[data<0] = 0
     data <- normalizeQuantiles(data)
     list(bed=bed, data=data, lambda=lambda, Dobs=do.call(cbind,lapply(mk, function(i) 
-        rowMeans(data[,meta$condition!="Healthy" & meta$factor==i]) - rowMeans(data[,meta$condition=="Healthy" & meta$factor==i]))))
+        rowMeans(data[,meta$condition!=control & meta$factor==i]) - rowMeans(data[,meta$condition==control & meta$factor==i]))))
 }
 
 boxCox <- function(x,lambda=0.2) {
