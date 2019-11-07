@@ -116,6 +116,15 @@ get.generank <- function(r){
     gsub("_\\d+", "", pr)
 }
 
+get.generankscore <- function(r){
+    r=sort(r,decreasing=TRUE)
+    pr=names(r)
+    i=get.uniqgeneid(pr)
+    d=r[i]
+    names(d)=gsub("_\\d+", "", pr[i])
+    d
+}
+
 get.rankid <- function(k, r){
     x=match(k,r)
     x=r[x[!is.na(x)]]
@@ -132,6 +141,10 @@ get.gene <- function(gene){
 
 get.genename <- function(gene){
     gsub("_\\d+", "", get.gene(gene))
+}
+
+get.uniqgeneid <- function(gene){
+    match(unique(get.genename(gene)), gsub("_\\d+", "", gene))
 }
 
 get.geneid <- function(gene){

@@ -60,33 +60,6 @@ j=get.geneid(res[[i]]$bed[,4])
 gsub("_\\d+", "", res[[i]]$bed[j,4][order(abs(res[[i]]$PC[j,1]),decreasing=TRUE)])
 })
 save(confs,enh,marks,nets,prom,rank,res,rewired, file="res.rda")
-#test plot
-getAUCs <- function(d) data.frame(x=rep(1:7,each=2),
-do.call(rbind,lapply(1:7,function(i) matrix(c(get.auc(get.rank(markers[[i]], get.generank(d[[i]]))), 
-get.auc(get.rank(markers$HKG, get.generank(d[[i]]))),
-get.auc(get.rank(markers[[i]], prom[[i]])),
-get.auc(get.rank(markers$HKG, prom[[i]]))),nrow=2)
-)),Type=rep(nm,each=2),Genes=rep(c('Cancer marker genes','Housekeeping genes'),7))
-getAUCmat <- function(d) 
-do.call(rbind,lapply(1:7,function(i)c(get.auc(get.rank(markers[[i]], get.generank(rank[[i]]))), unlist(lapply(1:6,function(j) get.auc(get.rank(markers[[i]], get.generank(d[[i]][[j]]))))))))
-auc=getAUCs(rank)
-colnames(auc)[2:3]=c('Irene','Promoter')
-dname=function(i) nm[i]
-#svglite("f1.svg",6,6)
-ggplot(auc, aes(x, color=Genes))+geom_line(aes(y=Irene))+ geom_line(aes(y=Promoter), linetype="dashed")+ scale_x_continuous(breaks=1:7,label=dname)+ labs(x="",y="AUC")+ theme(legend.position=c(.87,.94))
-mauc=getAUCmat(marks)
-colnames(mauc)=c('Irene',mk)
-getECDF <- function(d,i) do.call(rbind,lapply(1:6,function(j) as.matrix(data.frame(nm[i],mk[j],sort(get.rank(markers[[i]], get.generank(d[[j]])))))))
-getECDFmat <- function() 
-df=rbind(do.call(rbind,lapply(1:7,function(i)getECDF(marks[[i]],i))),
-do.call(rbind,lapply(1:7,function(i)as.matrix(data.frame(nm[i],'Irene',sort(get.rank(markers[[i]], get.generank(rank[[i]]))))))))
-df=as.data.frame(getECDFmat())
-colnames(df)=c('Type','Method','value')
-df$Type=as.factor(df$Type)
-df$Method=as.factor(df$Method)
-df$value=as.numeric(df$value)
-#svglite("f2.svg",6,6)
-ggplot(df,aes(value, colour=Method))+stat_ecdf(pad = FALSE)+labs(x="Rank", y="ECDF") +facet_wrap(.~Type)+ theme(legend.position=c(0.8,0.15))
 #plot
 dframe=function(d,col.names=NULL,row.names=NULL,m.colnames=NULL,m.rownames=NULL,melt=FALSE){
 if(!is.null(col.names)) colnames(d)=col.names
@@ -99,33 +72,38 @@ d
 v=c(2,5,6,4,1,7,3)
 dname=function(i) nm[v][i]
 ad <- function(x,y,z,d) data.frame(Type=x,Method=y,Genes=z,value=sort(d))
-#svglite("f1.svg",6,6)
 auc=dframe(do.call(rbind,lapply(v,function(i)c(get.auc(get.rank(markers[[i]], get.generank(rank[[i]]))), unlist(lapply(1:6,function(j) get.auc(get.rank(markers[[i]], get.generank(marks[[i]][[j]])))))))),col.names=c('dPC1',mk),m.colnames=c('Type','Mark','value'),melt=T)
 ggplot(auc, aes(x=Type,y=value,colour=Mark,shape=Mark))+geom_point(size=3)+scale_shape_manual(values=c(19,17,12:8))+scale_color_manual(values=RColorBrewer::brewer.pal(7,"Dark2"))+ scale_x_continuous(breaks=1:7,label=dname)+ labs(x="",y="AUC")
-#svglite("f2.svg",6,6)
+ggsave("f1.pdf",width=6,height=6,units="in")
 df=do.call(rbind,lapply(1:7,function(i) rbind(
 ad(nm[i],'Irene','Cancer marker genes',get.rank(markers[[i]], get.generank(rank[[i]]))), 
 ad(nm[i],'Irene','Housekeeping genes',get.rank(markers$HKG, get.generank(rank[[i]]))),
 ad(nm[i],'Promoter','Cancer marker genes',get.rank(markers[[i]], prom[[i]])),
 ad(nm[i],'Promoter','Housekeeping genes',get.rank(markers$HKG, prom[[i]])))))
 ggplot(df,aes(value, colour=Method, linetype=Genes))+stat_ecdf(pad=TRUE)+labs(x="Rank", y="ECDF") +facet_wrap(.~Type)+ theme(legend.position=c(0.8,0.14))
-#svglite("f3.svg",6,6)
+ggsave("f2.pdf",width=6,height=6,units="in")
 df=dframe(do.call(rbind,lapply(1:7,function(i)res[[i]]$proj[2,])),row.names=nm,col.names=paste0('dPC',1:6),m.colnames=c('Type','dPC','value'),melt=T)
 ggplot(df,aes(Type, value, fill=dPC))+geom_bar(stat="identity",position="stack")+labs(x='', y="Variance")+scale_y_continuous(labels = scales::percent) 
-#svglite("f4.svg",6,6)
+ggsave("f3.pdf",width=6,height=6,units="in")
 df = do.call(rbind,lapply(1:7, function(i) data.frame(melt(prcomp(res[[i]]$Dobs)$rotation),rep(mk,6),nm[i])))
 colnames(df)=c("id","PC","Loadings","Mark","type")
 ggplot(df, aes(x=Mark, y=Loadings, fill=Mark)) + geom_bar(stat='identity')+facet_grid(PC~type) +coord_flip()+theme(legend.position="none",axis.text.x = element_text(angle = 90, vjust = 0.5))
-#svglite("f5.svg",6,6)
+ggsave("f4.pdf",width=6,height=6,units="in")
 df=dframe(do.call(rbind,lapply(v,function(i) unlist(lapply(1:10,function(j) get.auc(get.rank(markers[[i]], rewired[[i]][[j]])))))),row.names=nm[v],melt=T)
 au=dframe(do.call(rbind,lapply(v,function(i)c(get.auc(get.rank(markers[[i]], get.generank(rank[[i]]))),get.auc(get.rank(markers[[i]], prom[[i]]))))),col.names=c('Irene','Promoter'),m.colnames=c('Type','Method','value'),melt=T)
 ggplot() + geom_boxplot(data=df, aes(Var1, value),outlier.shape = NA) + geom_line(data=au, aes(Type, value, linetype=Method),col="red")+ labs(x='',y="AUC")
-
-bed=res[[i]]$bed
-rownames(bed)=res[[i]]$bed[,4]
-hi=cbind(hic,bed[hic$gene,])
+ggsave("f5.pdf",width=6,height=6,units="in")
+df=dframe(do.call(rbind,lapply(1:7,function(i){
+j=match(hic$gene,res[[i]]$bed[,4])
+hi=data.frame(hic,res[[i]]$bed[j,],dPC1=res[[i]]$PC[j,1])
 hi=hi[hi$seqnames==hi$V1,]
-hlen=data.frame(hi[,c('gene','enh')],hi[,c('start','end')]-rowMeans(hi[,c('V2','V3')]))
-hlen$gene=get.genename(hlen$gene)
+hi=data.frame(hi[,c('gene','enh','dPC1')],Type=nm[i],d=rowMeans(hi[,c('start','end')])-rowMeans(hi[,c('V2','V3')]))
+rbind(data.frame(hi[get.genename(hi$gene) %in% markers[[i]],],Genes='Cancer marker genes'),
+data.frame(hi[get.genename(hi$gene) %in% markers$HKG,],Genes='Housekeeping genes'))
+})))
+df=df[order(abs(df$dPC1)),]
+ggplot(df, aes(d,0))+ geom_point(aes(col=dPC1),size=1,position=position_jitter())+ facet_grid(Type~Genes)+ xlim(c(-1e6,1e6))+ xlab('Distance to TSS (bp)')+ theme(panel.background=element_blank(), axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank(), axis.text.x = element_text(angle=30, vjust=.5))+ scale_color_gradient2(midpoint=0, low="blue", mid="white", high="red", space="Lab")
+ggsave("f6.pdf",width=6,height=6,units="in")
+
 
 
