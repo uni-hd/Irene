@@ -104,6 +104,10 @@ data.frame(hi[get.genename(hi$gene) %in% markers$HKG,],Genes='Housekeeping genes
 df=df[order(abs(df$dPC1)),]
 ggplot(df, aes(d,0))+ geom_point(aes(col=dPC1),size=1,position=position_jitter())+ facet_grid(Type~Genes)+ xlim(c(-1e6,1e6))+ xlab('Distance to TSS (bp)')+ theme(panel.background=element_blank(), axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank(), axis.text.x = element_text(angle=30, vjust=.5))+ scale_color_gradient2(midpoint=0, low="blue", mid="white", high="red", space="Lab")
 ggsave("f6.pdf",width=6,height=6,units="in")
-
-
+lapply(1:7,function(i)write.table(get.generankscore(rank[[i]]),file=paste0('~/tmp/i/',i,'.rnk'),quote=F,sep="\t",col.names=F))
+nv=abs(res[[i]]$PC[j,1])
+names(nv)=res[[i]]$bed[j,4]
+write.table(names(get.generankscore(nv))[1:4000],file='~/tmp/prom4k.txt',quote=F,sep="\t",col.names=F,row.names=F)
+write.table(names(get.generankscore(rank[[i]]))[1:4000],file='~/tmp/enh4k.txt',quote=F,sep="\t",col.names=F,row.names=F)
+https://www.kegg.jp/kegg-bin/show_pathway?map=hsa05214&multi_query=2475+red,blue%0d%0a5604+yellow
 
