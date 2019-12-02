@@ -8,6 +8,9 @@ download.file("https://github.com/uni-hd/Irene-data/archive/master.zip","Irene-d
 unzip("Irene-data-master.zip")
 setwd("Irene-data-master")
 source(system.file("extdata", "example.R", package="irene"), echo=TRUE)
+
+#output Irene rank list for the first test case
+write.table(format(get.generankscore(rank[[1]]), digits=3),file="PR.txt",sep="\t",quote=F,col.names=F)
 ```
 
 ## Also check out our results:
