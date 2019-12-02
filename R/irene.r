@@ -1,4 +1,4 @@
-dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, control="Healthy", transform = TRUE, trunc=FALSE, 
+dPCA <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 0.2, control="Healthy", transform = TRUE, trunc=TRUE, 
     nPaired = 0, nTransform = 0, nColMeanCent = 0, nColStand = 0, nMColMeanCent = 1, 
     nMColStand = 0, dSNRCut = 5, nUsedPCAZ = 0, nUseRB = 0, dPeakFDRCut = 0.5) 
 {
@@ -38,14 +38,15 @@ get.norm.data <- function (meta, bed, data, minlen = 50, maxlen = 2e4, lambda = 
     ix <- len>minlen & len<maxlen
     bed <- bed[ix, ]
     data <- data[ix, ] * 1e3/len[ix]
-    if (min(data) <= 0) 
-        data <- data - min(data) + 1e-5
+    z <- min(data[!is.na(data)])
+    if (z <= 0) 
+        data <- data - z + 1e-5
     if (lambda=="auto")
         lambda = get.lambda(data)
     if (transform)
         data <- boxCox(data, lambda)
     if (trunc)
-        data[data<0] = 0
+        data[is.na(data)] = 0
     data <- normalizeQuantiles(data)
     list(bed=bed, data=data, lambda=lambda, Dobs=do.call(cbind,lapply(mk, function(i) 
         rowMeans(data[,meta$condition!=control & meta$factor==i]) - rowMeans(data[,meta$condition==control & meta$factor==i]))))
@@ -80,9 +81,8 @@ read.table(paste0('enhancer/',substr(conf$ipReads,1,4)[1],'/row.bed'), stringsAs
 
 read.counts.trunc <- function (f, trunc=FALSE){
     x = read.counts(f)
-    d = quantile(x,.995)
     if (trunc)
-        x[x>d] = d
+        x[x==0] = NA
     x
 }
 

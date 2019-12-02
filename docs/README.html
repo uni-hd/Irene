@@ -293,10 +293,7 @@ $(document).ready(function () {
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-  <a href="index.html">Overview</a>
-</li>
-<li>
-  <a href="report.html">Report</a>
+  <a href="index.html">CLL</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -336,6 +333,7 @@ Using <em>Irene</em>, we analyzed the epigenetic networks from multiple histone 
 </div>
 <div id="installation" class="section level1">
 <h1>Installation</h1>
+<pre class="sh"><code>tar --exclude=&#39;irene/.git&#39; --exclude=&#39;irene/res&#39; --exclude=&#39;irene/docs&#39; -zcvf irene.tar.gz irene</code></pre>
 <p><em>Irene</em> can be installed directly from GitHub with the help of <em>devtools</em> package:</p>
 <pre class="r"><code>library(devtools)
 install_github(&quot;hdsu-bioquant/irene&quot;)</code></pre>
