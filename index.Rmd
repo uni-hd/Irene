@@ -6,7 +6,7 @@ params:
 ---
 
 ## {.tabset .tabset-fade}
-Use the tabs to switch to the corresponding test cases and results.
+Rmarkdown source codes for generating this site can be found: [https://github.com/uni-hd/Irene/blob/master/index.Rmd](https://github.com/uni-hd/Irene/blob/master/index.Rmd)
 
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(message=FALSE, warning=FALSE, fig.height=7, fig.width=7)
@@ -40,8 +40,9 @@ unique(vmap[d[!is.na(d)],1])
 }
 getKEGGlink <- function(id,prom,enh,colprom='yellow',colenh='pink',colboth='cyan') 
 paste0('https://www.kegg.jp/kegg-bin/show_pathway?map=',id,'&multi_query=',paste0(c(sapply(setdiff(prom,enh),function(d) paste0(d, paste0('+',colprom))),sapply(setdiff(enh,prom),function(d) paste0(d, paste0('+',colenh))),sapply(intersect(prom,enh),function(d) paste0(d, paste0('+',colboth)))),collapse='%0d%0a'))
-# Batch generate reports: 
+# Batch generating reports: 
 # for i in {2..7};do cp index.Rmd $i.Rmd;sed -i "s/i: 1/i: $i/" $i.Rmd;done
+# rmarkdown::render_site()
 ```
 
 ### PC
@@ -103,18 +104,6 @@ matdensity <- function(object, groupFactor, type = "l",
 matdensity(ndata[[i]]$data, confs[[i]]$factor)
 ```
 
-__Correlations between epigenetic marks__
-
-Correlations between epigenetic marks in each group
-
-```{r, eval=FALSE}
-m=matrix(NA,6,6)
-for(i in 1:6){for(j in 1:6){m[i,j]=cor(dat$Dobs[,i],dat$Dobs[,j])}}
-ggplot(m,aes(cell,Var1,fill=value))+geom_tile(colour="white")+
-  facet_grid(.~Var2)+scale_fill_gradient2(low="blue",high="red") +
-  theme(axis.text.x=element_text(angle=90,size=7,vjust=0.5))+labs(x="",y="")
-```
-
 ### Genes of interests
 The dPC1 values of the enhancers which interact with the promoters of cancer marker genes. Multiple promoters (if present) are indicated with *\_1*, *\_2*, ...
 
@@ -143,9 +132,9 @@ Here the top 4,000 genes mapped to KEGG pathways from each rank list are highlig
 <span style="border-radius: 2px;padding: 3px 1px;background-color:pink">Irene</span>
 <span style="border-radius: 2px;padding: 3px 1px;background-color:cyan">Both</span>
 
-```{r pathway}
+```{r, eval=FALSE}
 th=1:4000
-fn=read.table('res/keggpath.txt')[1,]
+fn=read.table('res/keggpath.txt')
 gn=apply(fn,1,function(x){
 genes=getKEGGnodeNames(paste0('res/kegg/',x[2],'.xml'))
 enh1=lapply(rank,function(d)names(get.generankscore(d))[th])
@@ -153,7 +142,18 @@ prom1=lapply(promrank,function(d)names(get.generankscore(d))[th])
 getKEGGlink(x[2],getKEGGnodeId(prom1[[i]],genes),getKEGGnodeId(enh1[[i]],genes))
 })
 names(gn)=substr(fn[,1],6,nchar(fn[,1]))
-bsselect(sn, type = "iframe", selected = 'PATHWAYS_IN_CANCER', live_search = TRUE, show_tick = TRUE)
+bsselect(gn, type = "iframe", selected = 'PATHWAYS_IN_CANCER', live_search = TRUE, show_tick = TRUE)
+```
+
+```{r pathway}
+fn=read.table('res/keggpath.txt')
+# preload xml as genes
+# genes=apply(fn,1,function(x) getKEGGnodeNames(paste0('res/kegg/',x[2],'.xml')))
+# names(genes)=fn[,2]
+# if everything has been preloaded
+gn=lapply(names(genes),function(d) getKEGGlink(d,getKEGGnodeId(prom1[[i]],genes[[d]]),getKEGGnodeId(enh1[[i]],genes[[d]])))
+names(gn)=substr(fn[,1],6,nchar(fn[,1]))
+bsselect(gn, type = "iframe", selected = 'PATHWAYS_IN_CANCER', live_search = TRUE, show_tick = TRUE)
 ```
 
 ```{r netstat, eval=FALSE}

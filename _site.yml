@@ -1,6 +1,6 @@
 name: "irene"
 output_dir: docs
-exclude: ["docs","inst","res","src","man","R","NAMESPACE","DESCRIPTION","README.md"]
+exclude: ["docs","inst","res","src","man","promoter","peakcall","enhancer","input","hg38","R","NAMESPACE","DESCRIPTION","README.md","*.gz","*.txt","*.rda","*.pdf","hg19.*","hg38.*"]
 navbar:
   title: "Irene results"
   type: inverse

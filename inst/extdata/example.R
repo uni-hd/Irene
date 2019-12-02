@@ -9,20 +9,24 @@ lx=c(.25,.17,.25,.23,.25,.23,.25)
 conf=read.table('ChIPdesign.txt',sep='\t', header=TRUE)
 confs=split(conf, conf$experiment)
 #read data
+print('reading data ...')
 rdata=lapply(1:7,function(i){
 read.alldata(confs[[i]], trunc=T)
 })
 #normalization
+print('normalization ...')
 ndata=lapply(1:7,function(i){
 get.norm.data(confs[[i]],rdata[[i]]$bed,rdata[[i]]$data,lambda=lx[i],transform=T)
 })
 #dPCA
+print('computing dPCA ...')
 res=lapply(1:7,function(i){
 meta=confs[[i]]
 meta$condition=as.integer(meta$condition=="Healthy")+1
 dPCA(meta,rdata[[i]]$bed,rdata[[i]]$data,lambda=lx[i])
 })
 #ranks
+print('computing ranks 1/4 ...')
 rank=lapply(1:7,function(i){
 spec=substr(confs[[i]]$ipReads,1,4)[1]
 hic=read.table(paste0('in.',spec,'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','gene','enh'))
@@ -30,14 +34,16 @@ g=make.graph(hic[,c('enh','gene')], res[[i]]$bed[,4], abs(res[[i]]$PC[,1]))
 page_rank(g$g, algo="arpack", personalized=g$v, directed=TRUE)$vector
 })
 #histone marks
+print('computing ranks 2/4 ...')
 marks=lapply(1:7,function(i){
 hic=read.table(paste0('in.',substr(confs[[i]]$ipReads,1,4)[1],'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','gene','enh'))
 lapply(1:6,function(j){
-g=make.graph(hic[,c('enh','gene')], res[[i]]$bed[,4], abs(boxCox(res[[i]]$Dobs[,j],lx[i])))
+g=make.graph(hic[,c('enh','gene')], res[[i]]$bed[,4], abs(res[[i]]$Dobs[,j]))
 page_rank(g$g, algo="arpack", personalized=g$v, directed=TRUE)$vector
 })
 })
 #nearest enhancer
+print('computing ranks 3/4 ...')
 nearest=lapply(1:7,function(i){
 spec=substr(confs[[i]]$ipReads,1,4)[1]
 hic=read.table(paste0('nearest.',spec,'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','gene','enh'))
@@ -45,11 +51,12 @@ g=make.graph(hic[,c('enh','gene')], res[[i]]$bed[,4], abs(res[[i]]$PC[,1]))
 page_rank(g$g, algo="arpack", personalized=g$v, directed=TRUE)$vector
 })
 #rewired
+print('computing ranks 4/4 ...')
 rewired=lapply(1:7,function(i){
 spec=substr(confs[[i]]$ipReads,1,4)[1]
 hic=read.table(paste0('in.',spec,'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','gene','enh'))
 g=make.graph(hic[,c('enh','gene')], res[[i]]$bed[,4], abs(res[[i]]$PC[,1]))
-lapply(1:100,function(j){
+lapply(1:10,function(j){
 g$g=rewire(g$g, with=each_edge(prob=1))
 get.generank(page_rank(g$g, algo="arpack", personalized=g$v, directed=TRUE)$vector)
 })
@@ -66,8 +73,8 @@ prom=lapply(1:7,function(i){
 j=get.geneid(res[[i]]$bed[,4])
 gsub("_\\d+", "", res[[i]]$bed[j,4][order(abs(res[[i]]$PC[j,1]),decreasing=TRUE)])
 })
-save(confs,enh,marks,nets,prom,rank,res,rewired, file="res.rda")
 #plot
+print('plotting figures ...')
 library(ggplot2)
 library(reshape2)
 dframe=function(d,col.names=NULL,row.names=NULL,m.colnames=NULL,m.rownames=NULL,melt=FALSE){
@@ -96,7 +103,7 @@ df=do.call(rbind,lapply(1:7,function(i) rbind(
 ad(nm[i],'Promoter','Cancer marker genes',get.generankscore(promrank[[i]])[markers[[i]]]),
 ad(nm[i],'Promoter','Housekeeping genes',get.generankscore(promrank[[i]])[markers$HKG]))))
 ggplot()+geom_boxplot(data=df, aes(Type, value, colour=Genes),outlier.shape = NA) +labs(x='', y="dPC1")+ theme(legend.position=c(.85,.9))
-ggsave("f7.pdf",width=6,height=6,units="in")
+ggsave("f6.pdf",width=6,height=6,units="in")
 df=dframe(do.call(rbind,lapply(1:7,function(i)summary(prcomp(res[[i]]$Dobs))$importance[2,])),row.names=nm,col.names=paste0('dPC',1:6),m.colnames=c('Type','dPC','value'),melt=T)
 ggplot(df,aes(Type, value, fill=dPC))+geom_bar(stat="identity",position="stack")+labs(x='', y="Variance")+scale_y_continuous(labels = scales::percent) 
 ggsave("f3.pdf",width=6,height=6,units="in")
