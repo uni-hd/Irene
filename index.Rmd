@@ -1,8 +1,8 @@
 ---
-title: Results
 output: html_document
 params:
    i: 1
+title: '`r tt=c("Chronic Lymphocytic Leukemia","Glioma","Colorectal Cancer","Acute Lymphocytic Leukemia","Chronic Lymphocytic Leukemia (IgV-mutated)","Multiple Myeloma","Papillary Carcinoma");tt[params$i]`'
 ---
 
 ## {.tabset .tabset-fade}
