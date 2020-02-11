@@ -28,7 +28,7 @@ A four-columns meta file (ChIPdesign.txt in our example) with the following head
 * condition: healthy and diseased states.
 * ipReads: the file which contains the sum of ChIP-Seq signals over the pre-defined promoter ([hg19](https://github.com/uni-hd/Irene-data/blob/master/promoter/hg19/row.bed), [hg38](https://github.com/uni-hd/Irene-data/blob/master/promoter/hg38/row.bed)) and enhancer ([hg19](https://github.com/uni-hd/Irene-data/blob/master/enhancer/hg19/row.bed),[hg38](https://github.com/uni-hd/Irene-data/blob/master/enhancer/hg38/row.bed)) regions. The numbers can be obtained using [bigWigAverageOverBed](http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/). 
 
-A promter-enhancer interaction table with the following header: chromosome names, start, end, gene names, enhancer names. It can be computed from Hi-C and/or ChIA-PET experiments. We have prepared the [hg19](https://github.com/uni-hd/Irene-data/blob/master/in.hg19.bed.gz) and [hg38](https://github.com/uni-hd/Irene-data/blob/master/in.hg38.bed.gz) files from the [4DGenome database](https://4dgenome.research.chop.edu/Download.html).
+A promoter-enhancer interaction table with the following header: chromosome names, start, end, gene names, enhancer names. It can be computed from Hi-C and/or ChIA-PET experiments. We have prepared the [hg19](https://github.com/uni-hd/Irene-data/blob/master/in.hg19.bed.gz) and [hg38](https://github.com/uni-hd/Irene-data/blob/master/in.hg38.bed.gz) files from the [4DGenome database](https://4dgenome.research.chop.edu/Download.html).
 ### R settings
 ```r
 library(irene)
