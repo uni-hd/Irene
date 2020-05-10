@@ -26,7 +26,7 @@ meta$condition=as.integer(meta$condition=="Healthy")+1
 dPCA(meta,rdata[[i]]$bed,rdata[[i]]$data,lambda=lx[i])
 })
 #ranks
-print('computing ranks 1/2 ...')
+print('computing ranks 1/3 ...')
 rank=lapply(1:7,function(i){
 spec=substr(confs[[i]]$ipReads,1,4)[1]
 hic=read.table(paste0('in.',spec,'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','gene','enh'))
