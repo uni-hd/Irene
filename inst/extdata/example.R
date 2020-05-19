@@ -89,9 +89,15 @@ ggsave("f2.pdf",width=6,height=6,units="in")
 df=do.call(rbind,lapply(1:7,function(i) {
 hic=read.table(paste0('in.',substr(confs[[i]]$ipReads,1,4)[1],'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','prom','enh'))
 rbind(
-ad(nm[i],'dPC1','Cancer marker genes',abs(res[[i]]$PC[gsub("_\\d+", "", res[[i]]$bed[,4]) %in% markers[[i]] | res[[i]]$bed[,4] %in% hic[get.genename(hic$gene) %in% markers[[i]],5],1])),
-ad(nm[i],'dPC1','Housekeeping genes',abs(res[[i]]$PC[gsub("_\\d+", "", res[[i]]$bed[,4]) %in% markers$HKG | res[[i]]$bed[,4] %in% hic[get.genename(hic$gene) %in% markers$HKG,5],1])))}))
+ad(nm[i],'Promoter','Cancer marker genes',abs(res[[i]]$PC[gsub("_\\d+", "", res[[i]]$bed[,4]) %in% markers[[i]],1])),
+ad(nm[i],'Promoter','Housekeeping genes',abs(res[[i]]$PC[gsub("_\\d+", "", res[[i]]$bed[,4]) %in% markers$HKG,1])))}))
 p=ggplot()+geom_boxplot(data=df, aes(Type, value, colour=Genes),outlier.shape = NA) +labs(x='', y="dPC1")+ theme(legend.position=c(.85,.9))
+df=rbind(df,do.call(rbind,lapply(1:7,function(i) {
+hic=read.table(paste0('in.',substr(confs[[i]]$ipReads,1,4)[1],'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','prom','enh'))
+rbind(
+ad(nm[i],'Enhancer','Cancer marker genes',abs(res[[i]]$PC[res[[i]]$bed[,4] %in% hic[get.genename(hic$prom) %in% markers[[i]],5],1])),
+ad(nm[i],'Enhancer','Housekeeping genes',abs(res[[i]]$PC[res[[i]]$bed[,4] %in% hic[get.genename(hic$prom) %in% markers$HKG,5],1])))})))
+p=ggplot()+facet_grid(Method~.,scales="free")+geom_boxplot(data=df, aes(Type, value, colour=Genes),outlier.shape = NA) +labs(x='', y="dPC1")+ theme(legend.position=c(.8,.9))
 ggsave("f1.pdf",width=6,height=6,units="in")
 df=dframe(do.call(rbind,lapply(1:7,function(i)summary(prcomp(res[[i]]$Dobs))$importance[2,])),row.names=nm,col.names=paste0('dPC',1:6),m.colnames=c('Type','dPC','value'),melt=T)
 p=ggplot(df,aes(Type, value, fill=dPC))+geom_bar(stat="identity",position="stack")+labs(x='', y="Variance")+scale_y_continuous(labels = scales::percent) 
