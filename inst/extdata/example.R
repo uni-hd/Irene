@@ -25,6 +25,8 @@ meta=confs[[i]]
 meta$condition=as.integer(meta$condition=="Healthy")+1
 dPCA(meta,rdata[[i]]$bed,rdata[[i]]$data,lambda=lx[i])
 })
+#merge PC1 and PC2
+for(i in 1:7) res[[i]]$PC[,1]=abs(res[[i]]$PC[,1])+abs(res[[i]]$PC[,2])
 #ranks
 print('computing ranks 1/3 ...')
 rank=lapply(1:7,function(i){
