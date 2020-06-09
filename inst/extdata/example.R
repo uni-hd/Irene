@@ -86,8 +86,17 @@ ad(nm[i],'Irene','Cancer marker genes',get.rank(markers[[i]], get.generank(rank[
 ad(nm[i],'Irene','Housekeeping genes',get.rank(markers$HKG, get.generank(rank[[i]]))),
 ad(nm[i],'Promoter','Cancer marker genes',get.rank(markers[[i]], prom[[i]])),
 ad(nm[i],'Promoter','Housekeeping genes',get.rank(markers$HKG, prom[[i]])))))
+au1=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[[nm[i]]], get.generank(rank[[i]]))))),digits=2),Type=nm, Method='Irene',Genes='Cancer marker genes')
+au2=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[[nm[i]]], prom[[i]])))),digits=2),Type=nm, Method='Promoter',Genes='Cancer marker genes')
+au3=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[['HKG']], get.generank(rank[[i]]))))),digits=2),Type=nm, Method='Irene',Genes='Housekeeping genes')
+au4=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[['HKG']], prom[[i]])))),digits=2),Type=nm, Method='Promoter',Genes='Housekeeping genes')
 p=ggplot(df,aes(value, colour=Method, linetype=Genes))+stat_ecdf(pad=TRUE)+labs(x="Rank", y="ECDF") +facet_wrap(.~Type)+ theme(legend.position=c(0.8,0.14))
-ggsave("f2.pdf",width=6,height=6,units="in")
+p=p+geom_text(data.frame(label='AUCs',Type=nm, Method='Irene',Genes='Cancer marker genes'), mapping = aes(x = 0.92, y = 0.33, label = label), size=3, show.legend=FALSE)
+p=p+geom_text(au1, mapping = aes(x = 0.92, y = 0.25, label = label), size=2.5, show.legend=FALSE)+geom_segment(aes(x = 0.7, y = 0.25, xend = 0.85, yend = 0.25), linetype="solid", colour = cols[1])
+p=p+geom_text(au2, mapping = aes(x = 0.92, y = 0.20, label = label), size=2.5, show.legend=FALSE)+geom_segment(aes(x = 0.7, y = 0.20, xend = 0.85, yend = 0.20), linetype="solid", colour = cols[2])
+p=p+geom_text(au3, mapping = aes(x = 0.92, y = 0.15, label = label), size=2.5, show.legend=FALSE)+geom_segment(aes(x = 0.7, y = 0.15, xend = 0.85, yend = 0.15), linetype="dashed", colour = cols[1])
+p=p+geom_text(au4, mapping = aes(x = 0.92, y = 0.10, label = label), size=2.5, show.legend=FALSE)+geom_segment(aes(x = 0.7, y = 0.10, xend = 0.85, yend = 0.10), linetype="dashed", colour = cols[2])
+ggsave(p,file="f2.pdf",width=6,height=6,units="in")
 df=do.call(rbind,lapply(1:7,function(i) {
 hic=read.table(paste0('in.',substr(confs[[i]]$ipReads,1,4)[1],'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','prom','enh'))
 rbind(
