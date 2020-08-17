@@ -4,19 +4,17 @@ options(stringsAsFactors = FALSE)
 data(markers)
 mk=c("H3K27ac","H3K27me3","H3K36me3","H3K4me1","H3K4me3","H3K9me3")
 nm=c("CLL","Glioma","CRC","B-ALL","mCLL","MM","PTC")
-lx=c(.25,.17,.25,.23,.25,.23,.25)
+lx=rep(.25,7)
 #conf
 conf=read.table('ChIPdesign.txt',sep='\t', header=TRUE)
 confs=split(conf, conf$experiment)
 #read data
 print('reading data ...')
 rdata=lapply(1:7,function(i){
-read.alldata(confs[[i]], trunc=T)
-})
-#normalization
-print('normalization ...')
-ndata=lapply(1:7,function(i){
-get.norm.data(confs[[i]],rdata[[i]]$bed,rdata[[i]]$data,lambda=lx[i],transform=T)
+d = read.alldata(confs[[i]], trunc=T)
+id= read.table(paste0('../',i,'.id'))[,1]
+j = grepl('_\\d+',d$bed[,4]) | (d$bed[,4] %in% id)
+list(bed=d$bed[j,], data=d$data[j,])
 })
 #dPCA
 print('computing dPCA ...')
@@ -49,7 +47,7 @@ rewired=lapply(1:7,function(i){
 spec=substr(confs[[i]]$ipReads,1,4)[1]
 hic=read.table(paste0('in.',spec,'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','gene','enh'))
 g=make.graph(hic[,c('enh','gene')], res[[i]]$bed[,4], abs(res[[i]]$PC[,1]))
-lapply(1:10,function(j){
+lapply(1:100,function(j){
 g$g=rewire(g$g, with=each_edge(prob=1))
 get.generank(page_rank(g$g, algo="arpack", personalized=g$v, directed=TRUE)$vector)
 })
@@ -79,16 +77,25 @@ if(!is.null(m.rownames)) rownames(d)=m.rownames
 d
 }
 v=c(2,5,6,4,1,7,3)
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+cols = gg_color_hue(2)
+markers$CRC=markers$`Colorectal cancer`
+markers$PTC=markers$`Papillary thyroid carcinoma`
+markers$MM=markers$`Multiple myeloma`
+markers$mCLL=markers$CLL
 dname=function(i) nm[v][i]
 ad <- function(x,y,z,d) data.frame(Type=x,Method=y,Genes=z,value=sort(d))
 df=do.call(rbind,lapply(1:7,function(i) rbind(
-ad(nm[i],'Irene','Cancer marker genes',get.rank(markers[[i]], get.generank(rank[[i]]))), 
-ad(nm[i],'Irene','Housekeeping genes',get.rank(markers$HKG, get.generank(rank[[i]]))),
+ad(nm[i],'Irene','Cancer marker genes',get.rank(markers[[i]], enh[[i]])), 
+ad(nm[i],'Irene','Housekeeping genes',get.rank(markers$HKG, enh[[i]])),
 ad(nm[i],'Promoter','Cancer marker genes',get.rank(markers[[i]], prom[[i]])),
 ad(nm[i],'Promoter','Housekeeping genes',get.rank(markers$HKG, prom[[i]])))))
-au1=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[[nm[i]]], get.generank(rank[[i]]))))),digits=2),Type=nm, Method='Irene',Genes='Cancer marker genes')
+au1=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[[nm[i]]], enh[[i]])))),digits=2),Type=nm, Method='Irene',Genes='Cancer marker genes')
 au2=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[[nm[i]]], prom[[i]])))),digits=2),Type=nm, Method='Promoter',Genes='Cancer marker genes')
-au3=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[['HKG']], get.generank(rank[[i]]))))),digits=2),Type=nm, Method='Irene',Genes='Housekeeping genes')
+au3=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[['HKG']], enh[[i]])))),digits=2),Type=nm, Method='Irene',Genes='Housekeeping genes')
 au4=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[['HKG']], prom[[i]])))),digits=2),Type=nm, Method='Promoter',Genes='Housekeeping genes')
 p=ggplot(df,aes(value, colour=Method, linetype=Genes))+stat_ecdf(pad=TRUE)+labs(x="Rank", y="ECDF") +facet_wrap(.~Type)+ theme(legend.position=c(0.8,0.14))
 p=p+geom_text(data.frame(label='AUCs',Type=nm, Method='Irene',Genes='Cancer marker genes'), mapping = aes(x = 0.92, y = 0.33, label = label), size=3, show.legend=FALSE)
@@ -121,4 +128,3 @@ df=dframe(do.call(rbind,lapply(v,function(i) unlist(lapply(1:10,function(j) get.
 au=dframe(do.call(rbind,lapply(v,function(i)c(get.auc(get.rank(markers[[i]], get.generank(rank[[i]]))),get.auc(get.rank(markers[[i]], prom[[i]])),get.auc(get.rank(markers[[i]], get.generank(nearest[[i]])))))),col.names=c('Irene','Promoter','Nearest'),m.colnames=c('Type','Method','value'),melt=T)
 p=ggplot() + geom_boxplot(data=df, aes(Var1, value),outlier.shape = NA) + geom_line(data=au, aes(Type, value, colour=Method))+ labs(x='',y="AUC")+ theme(legend.position=c(.85,.89))
 ggsave("f5.pdf",width=6,height=6,units="in")
-
