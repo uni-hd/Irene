@@ -12,7 +12,7 @@ confs=split(conf, conf$experiment)
 print('reading data ...')
 rdata=lapply(1:7,function(i){
 d = read.alldata(confs[[i]], trunc=T)
-id= read.table(paste0('../',i,'.id'))[,1]
+id= read.table(paste0(i,'.id'))[,1]
 j = grepl('_\\d+',d$bed[,4]) | (d$bed[,4] %in% id)
 list(bed=d$bed[j,], data=d$data[j,])
 })
