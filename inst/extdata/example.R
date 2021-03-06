@@ -88,21 +88,32 @@ gg_color_hue <- function(n) {
   hcl(h = hues, l = 65, c = 100)[1:n]
 }
 cols = gg_color_hue(2)
-markers$CRC=markers$`Colorectal cancer`
-markers$PTC=markers$`Papillary thyroid carcinoma`
-markers$MM=markers$`Multiple myeloma`
-markers$mCLL=markers$CLL
+shortnames <- function(d){
+d$CRC=d$`Colorectal cancer`
+d$PTC=d$`Papillary thyroid carcinoma`
+d$MM=d$`Multiple myeloma`
+d$mCLL=d$CLL
+d}
+#tissue-specific genes
+ts=c('COLON (BULK TISSUE)','THYROID (BULK TISSUE)','CD19+ B CELLS','BRAIN (BULK)')
+download.file("https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=ARCHS4_Tissues","ARCHS4_Tissues.txt")
+x=read.table("ARCHS4_Tissues.txt",sep='\t',row.names=1)
+x=split(x[,-ncol(x)],rownames(x))
+tissues=x[c(ts[c(3,4,1,3,3,3,2)])]
+names(tissues)=names(markers)[1:7]
+markers = shortnames(markers)
+tissues = shortnames(tissues)
 dname=function(i) nm[v][i]
 ad <- function(x,y,z,d) data.frame(Type=x,Method=y,Genes=z,value=sort(d))
 df=do.call(rbind,lapply(1:7,function(i) rbind(
-ad(nm[i],'Irene','Cancer marker genes',get.rank(markers[[i]], enh[[i]])), 
-ad(nm[i],'Irene','Housekeeping genes',get.rank(markers$HKG, enh[[i]])),
-ad(nm[i],'Promoter','Cancer marker genes',get.rank(markers[[i]], prom[[i]])),
-ad(nm[i],'Promoter','Housekeeping genes',get.rank(markers$HKG, prom[[i]])))))
+ad(nm[i],'Irene',   'Cancer marker genes',  get.rank(markers[[i]], enh[[i]])), 
+ad(nm[i],'Irene',   'Tissue-specific genes',get.rank(tissues[[i]], enh[[i]])),
+ad(nm[i],'Promoter','Cancer marker genes',  get.rank(markers[[i]], prom[[i]])),
+ad(nm[i],'Promoter','Tissue-specific genes',get.rank(tissues[[i]], prom[[i]])))))
 au1=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[[nm[i]]], enh[[i]])))),digits=2),Type=nm, Method='Irene',Genes='Cancer marker genes')
 au2=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[[nm[i]]], prom[[i]])))),digits=2),Type=nm, Method='Promoter',Genes='Cancer marker genes')
-au3=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[['HKG']], enh[[i]])))),digits=2),Type=nm, Method='Irene',Genes='Housekeeping genes')
-au4=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(markers[['HKG']], prom[[i]])))),digits=2),Type=nm, Method='Promoter',Genes='Housekeeping genes')
+au3=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(tissues[[nm[i]]], enh[[i]])))),digits=2),Type=nm, Method='Irene',Genes='Tissue-specific genes')
+au4=data.frame(label=round(unlist(lapply(1:7,function(i) get.auc(get.rank(tissues[[nm[i]]], prom[[i]])))),digits=2),Type=nm, Method='Promoter',Genes='Tissue-specific genes')
 p=ggplot(df,aes(value, colour=Method, linetype=Genes))+stat_ecdf(pad=TRUE)+labs(x="Rank", y="ECDF") +facet_wrap(.~Type)+ theme(legend.position=c(0.8,0.14))
 p=p+geom_text(data.frame(label='AUCs',Type=nm, Method='Irene',Genes='Cancer marker genes'), mapping = aes(x = 0.92, y = 0.33, label = label), size=3, show.legend=FALSE)
 p=p+geom_text(au1, mapping = aes(x = 0.92, y = 0.25, label = label), size=2.5, show.legend=FALSE)+geom_segment(aes(x = 0.7, y = 0.25, xend = 0.85, yend = 0.25), linetype="solid", colour = cols[1])
@@ -113,14 +124,14 @@ ggsave(p,file="f2.pdf",width=6,height=6,units="in")
 df=do.call(rbind,lapply(1:7,function(i) {
 hic=read.table(paste0('in.',substr(confs[[i]]$ipReads,1,4)[1],'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','prom','enh'))
 rbind(
-ad(nm[i],'Promoter','Cancer marker genes',abs(res[[i]]$PC[gsub("_\\d+", "", res[[i]]$bed[,4]) %in% markers[[i]],1])),
-ad(nm[i],'Promoter','Housekeeping genes',abs(res[[i]]$PC[gsub("_\\d+", "", res[[i]]$bed[,4]) %in% markers$HKG,1])))}))
+ad(nm[i],'Promoter','Cancer marker genes',  abs(res[[i]]$PC[gsub("_\\d+", "", res[[i]]$bed[,4]) %in% markers[[i]],1])),
+ad(nm[i],'Promoter','Tissue-specific genes',abs(res[[i]]$PC[gsub("_\\d+", "", res[[i]]$bed[,4]) %in% tissues[[i]],1])))}))
 p=ggplot()+geom_boxplot(data=df, aes(Type, value, colour=Genes),outlier.shape = NA) +labs(x='', y="dPC1")+ theme(legend.position=c(.85,.9))
 df=rbind(df,do.call(rbind,lapply(1:7,function(i) {
 hic=read.table(paste0('in.',substr(confs[[i]]$ipReads,1,4)[1],'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','prom','enh'))
 rbind(
-ad(nm[i],'Enhancer','Cancer marker genes',abs(res[[i]]$PC[res[[i]]$bed[,4] %in% hic[get.genename(hic$prom) %in% markers[[i]],5],1])),
-ad(nm[i],'Enhancer','Housekeeping genes',abs(res[[i]]$PC[res[[i]]$bed[,4] %in% hic[get.genename(hic$prom) %in% markers$HKG,5],1])))})))
+ad(nm[i],'Enhancer','Cancer marker genes',  abs(res[[i]]$PC[res[[i]]$bed[,4] %in% hic[get.genename(hic$prom) %in% markers[[i]],5],1])),
+ad(nm[i],'Enhancer','Tissue-specific genes',abs(res[[i]]$PC[res[[i]]$bed[,4] %in% hic[get.genename(hic$prom) %in% tissues[[i]],5],1])))})))
 p=ggplot()+facet_grid(Method~.,scales="free")+geom_boxplot(data=df, aes(Type, value, colour=Genes),outlier.shape = NA) +labs(x='', y="dPC1")+ theme(legend.position=c(.8,.9))
 ggsave("f1.pdf",width=6,height=6,units="in")
 df=dframe(do.call(rbind,lapply(1:7,function(i)summary(prcomp(res[[i]]$Dobs))$importance[2,])),row.names=nm,col.names=paste0('dPC',1:6),m.colnames=c('Type','dPC','value'),melt=T)
