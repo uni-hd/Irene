@@ -5,14 +5,10 @@ data(markers)
 mk=c("H3K27ac","H3K27me3","H3K36me3","H3K4me1","H3K4me3","H3K9me3")
 nm=c("CLL","Glioma","CRC","B-ALL","mCLL","MM","PTC")
 lx=rep(.25,7)
+set.seed(1)
 #conf
 conf=read.table('ChIPdesign.txt',sep='\t', header=TRUE)
 confs=split(conf, conf$experiment)
-#precompiled list for tissue-specific enhancers
-ji= lapply(1:7,function(i){
-id= read.table(paste0(i,'.id'))[,1]
-grepl('_\\d+',d$bed[,4]) | (d$bed[,4] %in% id)
-})
 #read data
 print('reading data ...')
 rdata=lapply(1:7,function(i){
@@ -28,6 +24,12 @@ dPCA(meta,rdata[[i]]$bed,rdata[[i]]$data,lambda=lx[i])
 })
 #merge PC1 and PC2
 for(i in 1:7) res[[i]]$PC[,1]=abs(res[[i]]$PC[,1])+abs(res[[i]]$PC[,2])
+#precompiled list for tissue-specific enhancers
+ji= lapply(1:7,function(i){
+id= read.table(paste0(i,'.id'))[,1]
+d = res[[i]]$bed[,4]
+grepl('_\\d+',d) | (d %in% id)
+})
 #ranks
 print('computing ranks 1/3 ...')
 rank=lapply(1:7,function(i){j=ji[[i]]
