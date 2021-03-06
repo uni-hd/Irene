@@ -8,13 +8,16 @@ lx=rep(.25,7)
 #conf
 conf=read.table('ChIPdesign.txt',sep='\t', header=TRUE)
 confs=split(conf, conf$experiment)
+#precompiled list for tissue-specific enhancers
+ji= lapply(1:7,function(i){
+id= read.table(paste0(i,'.id'))[,1]
+grepl('_\\d+',d$bed[,4]) | (d$bed[,4] %in% id)
+})
 #read data
 print('reading data ...')
 rdata=lapply(1:7,function(i){
-d = read.alldata(confs[[i]], trunc=T)
-id= read.table(paste0(i,'.id'))[,1]
-j = grepl('_\\d+',d$bed[,4]) | (d$bed[,4] %in% id)
-list(bed=d$bed[j,], data=d$data[j,])
+d = read.alldata(confs[[i]], trunc=TRUE)
+list(bed=d$bed, data=d$data)
 })
 #dPCA
 print('computing dPCA ...')
@@ -27,27 +30,28 @@ dPCA(meta,rdata[[i]]$bed,rdata[[i]]$data,lambda=lx[i])
 for(i in 1:7) res[[i]]$PC[,1]=abs(res[[i]]$PC[,1])+abs(res[[i]]$PC[,2])
 #ranks
 print('computing ranks 1/3 ...')
-rank=lapply(1:7,function(i){
+rank=lapply(1:7,function(i){j=ji[[i]]
 spec=substr(confs[[i]]$ipReads,1,4)[1]
 hic=read.table(paste0('in.',spec,'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','gene','enh'))
-g=make.graph(hic[,c('enh','gene')], res[[i]]$bed[,4], abs(res[[i]]$PC[,1]))
+g=make.graph(hic[,c('enh','gene')], res[[i]]$bed[j,4], abs(res[[i]]$PC[j,1]))
 page_rank(g$g, algo="arpack", personalized=g$v, directed=TRUE)$vector
 })
 #nearest enhancer
 print('computing ranks 2/3 ...')
-nearest=lapply(1:7,function(i){
+nearest=lapply(1:7,function(i){j=ji[[i]]
 spec=substr(confs[[i]]$ipReads,1,4)[1]
 hic=read.table(paste0('nearest.',spec,'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','gene','enh'))
-g=make.graph(hic[,c('enh','gene')], res[[i]]$bed[,4], abs(res[[i]]$PC[,1]))
+g=make.graph(hic[,c('enh','gene')], res[[i]]$bed[j,4], abs(res[[i]]$PC[j,1]))
 page_rank(g$g, algo="arpack", personalized=g$v, directed=TRUE)$vector
 })
-#rewired
+#rewired iterations
+ri = 1:3
 print('computing ranks 3/3 ...')
-rewired=lapply(1:7,function(i){
+rewired=lapply(1:7,function(i){j=ji[[i]]
 spec=substr(confs[[i]]$ipReads,1,4)[1]
 hic=read.table(paste0('in.',spec,'.bed.gz'),sep='\t',col.names=c('seqnames','start','end','gene','enh'))
-g=make.graph(hic[,c('enh','gene')], res[[i]]$bed[,4], abs(res[[i]]$PC[,1]))
-lapply(1:100,function(j){
+g=make.graph(hic[,c('enh','gene')], res[[i]]$bed[j,4], abs(res[[i]]$PC[j,1]))
+lapply(ri,function(j){
 g$g=rewire(g$g, with=each_edge(prob=1))
 get.generank(page_rank(g$g, algo="arpack", personalized=g$v, directed=TRUE)$vector)
 })
@@ -124,7 +128,7 @@ df = do.call(rbind,lapply(1:7, function(i) data.frame(melt(prcomp(res[[i]]$Dobs)
 colnames(df)=c("id","PC","Loadings","Mark","type")
 p=ggplot(df, aes(x=Mark, y=Loadings, fill=Mark)) + geom_bar(stat='identity')+facet_grid(PC~type) +coord_flip()+theme(legend.position="none",axis.text.x = element_text(angle = 90, vjust = 0.5))
 ggsave("f4.pdf",width=6,height=6,units="in")
-df=dframe(do.call(rbind,lapply(v,function(i) unlist(lapply(1:10,function(j) get.auc(get.rank(markers[[i]], rewired[[i]][[j]])))))),row.names=nm[v],melt=T)
+df=dframe(do.call(rbind,lapply(v,function(i) unlist(lapply(ri,function(j) get.auc(get.rank(markers[[i]], rewired[[i]][[j]])))))),row.names=nm[v],melt=T)
 au=dframe(do.call(rbind,lapply(v,function(i)c(get.auc(get.rank(markers[[i]], get.generank(rank[[i]]))),get.auc(get.rank(markers[[i]], prom[[i]])),get.auc(get.rank(markers[[i]], get.generank(nearest[[i]])))))),col.names=c('Irene','Promoter','Nearest'),m.colnames=c('Type','Method','value'),melt=T)
 p=ggplot(df, aes(Var1, value)) + geom_violin() +geom_boxplot(width=0.2,coef=0,outlier.shape=NA) + geom_line(data=au, aes(Type, value, colour=Method))+ labs(x='',y="AUC")+ theme(legend.position=c(.85,.89))
 ggsave("f5.pdf",width=6,height=6,units="in")
