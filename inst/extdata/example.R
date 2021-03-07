@@ -147,7 +147,7 @@ p=ggplot(df, aes(Var1, value)) + geom_violin() +geom_boxplot(width=0.2,coef=0,ou
 ggsave("f5.pdf",width=6,height=6,units="in")
 #validation of AUCs on multiple cancer genesets
 info=data.frame(file=c('cancermine_collated.tsv.gz','Compendium_Cancer_Genes.tsv.gz'),
-	gene=c('V7','V1'),type=c('V4','V4'),gset=c('CancerMine','IntOGen'),out=c('cancermine','intogen'),size=c(20,20))
+	gene=c('V7','V1'),type=c('V4','V4'),gset=c('Cancer marker genes','IntOGen'),out=c('cancermine','intogen'),size=c(20,20))
 for(k in 1:2){d=info[k,]
 x=read.table(gzfile(d$file),sep='\t',skip=1)
 x=unique(x)
