@@ -145,3 +145,24 @@ df=dframe(do.call(rbind,lapply(v,function(i) unlist(lapply(ri,function(j) get.au
 au=dframe(do.call(rbind,lapply(v,function(i)c(get.auc(get.rank(markers[[i]], get.generank(rank[[i]]))),get.auc(get.rank(markers[[i]], prom[[i]])),get.auc(get.rank(markers[[i]], get.generank(nearest[[i]])))))),col.names=c('Irene','Promoter','Nearest'),m.colnames=c('Type','Method','value'),melt=T)
 p=ggplot(df, aes(Var1, value)) + geom_violin() +geom_boxplot(width=0.2,coef=0,outlier.shape=NA) + geom_line(data=au, aes(Type, value, colour=Method))+ labs(x='',y="AUC")+ theme(legend.position=c(.85,.89))
 ggsave("f5.pdf",width=6,height=6,units="in")
+#validation of AUCs on multiple cancer genesets
+info=data.frame(file=c('cancermine_collated.tsv.gz','Compendium_Cancer_Genes.tsv.gz'),
+	gene=c('V7','V1'),type=c('V4','V4'),gset=c('CancerMine','IntOGen'),out=c('cancermine','intogen'),size=c(20,20))
+for(k in 1:2){d=info[k,]
+x=read.table(gzfile(d$file),sep='\t',skip=1)
+x=unique(x)
+x=split(x,x[,d$type])
+x=x[unlist(lapply(x,nrow))>d$size]
+df=do.call(rbind,lapply(1:7,function(i){
+gr=get.generank(rank[[i]])
+set.seed(1)
+d1=do.call(rbind,lapply(1:length(x),function(j) c(nrow(x[[j]]),get.auc(get.rank(x[[j]][,d$gene], gr)))))
+d2=do.call(rbind,lapply(1:length(x),function(j) c(nrow(x[[j]]),get.auc(get.rank(sample(setdiff(tissues[[i]],x[[j]][,d$gene]),nrow(x[[j]]),replace=F), gr)))))
+df=data.frame(d1,GeneSet=d$gset)
+df=rbind(df,data.frame(d2,GeneSet='Tissue-specific genes'))
+data.frame(df,Type=nm[i])
+}))
+df$GeneSet=factor(df$GeneSet,levels=c(d$gset,'Tissue-specific genes'))
+p=ggplot(df,aes(x=GeneSet, y=X2, colour=GeneSet)) + geom_violin() +geom_boxplot(width=0.2,coef=0,outlier.shape=NA)+  facet_grid(.~Type)+labs(x='Test cases', y="AUCs")+ theme(axis.text.x = element_blank(), legend.position=c(.86,.07), legend.text=element_text(size=8),legend.title = element_blank(),legend.margin=margin(t=0, unit='cm'))+ scale_size(guide="none")
+ggsave(p,file=paste0(d$out,'.pdf'),height=6,width=6)
+}
