@@ -148,7 +148,7 @@ ggsave("f5.pdf",width=6,height=6,units="in")
 #validation of AUCs on multiple cancer genesets
 info=data.frame(file=c('cancermine_collated.tsv.gz','Compendium_Cancer_Genes.tsv.gz'),
 	gene=c('V7','V1'),type=c('V4','V4'),gset=c('Cancer marker genes','IntOGen'),out=c('cancermine','intogen'),size=c(20,20))
-for(k in 1:2){d=info[k,]
+d=info[1,]
 x=read.table(gzfile(d$file),sep='\t',skip=1)
 x=unique(x)
 x=split(x,x[,d$type])
@@ -165,4 +165,3 @@ data.frame(df,Type=nm[i])
 df$GeneSet=factor(df$GeneSet,levels=c(d$gset,'Tissue-specific genes'))
 p=ggplot(df,aes(x=GeneSet, y=X2, colour=GeneSet)) + geom_violin() +geom_boxplot(width=0.2,coef=0,outlier.shape=NA)+  facet_grid(.~Type)+labs(x='Test cases', y="AUCs")+ theme(axis.text.x = element_blank(), legend.position=c(.86,.07), legend.text=element_text(size=8),legend.title = element_blank(),legend.margin=margin(t=0, unit='cm'))+ scale_size(guide="none")
 ggsave(p,file=paste0(d$out,'.pdf'),height=6,width=6)
-}
